@@ -113,7 +113,7 @@ export function AdminOeuvresClient({ artworks, categories }: AdminOeuvresClientP
           <Card key={artwork.id} className="overflow-hidden">
             <div className="relative aspect-square bg-muted">
               <Image src={artwork.image_url || "/placeholder.svg"} alt={artwork.title} fill className="object-cover" />
-              <Badge className="absolute right-2 top-2 bg-primary/90 text-primary-foreground">{artwork.qr_code}</Badge>
+              <Badge className="absolute right-2 top-2 bg-primary/90 text-primary-foreground">QrCode</Badge>
             </div>
 
             <div className="p-4">
