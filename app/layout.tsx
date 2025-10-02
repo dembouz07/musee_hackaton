@@ -15,20 +15,24 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Musée des Civilisations Noires",
   description: "Découvrez le patrimoine culturel africain à travers une expérience digitale immersive",
-  generator: "v0.app",
 }
 
 export default function RootLayout({
-  children,
-}: Readonly<{
+                                     children,
+                                   }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr">
+      <html lang="fr">
+      <head>
+        {/* Console mobile pour debug - À SUPPRIMER après */}
+        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+        <script dangerouslySetInnerHTML={{ __html: 'eruda.init();' }} />
+      </head>
       <body className={`font-sans ${GeistSans.variable} ${playfair.variable}`}>
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-        <Analytics />
+      <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+      <Analytics />
       </body>
-    </html>
+      </html>
   )
 }
