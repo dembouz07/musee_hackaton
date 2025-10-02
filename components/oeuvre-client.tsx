@@ -87,7 +87,7 @@ export function OeuvreClient({ artwork, relatedArtworks }: OeuvreClientProps) {
                 {artwork.title}
               </h1>
               <Badge variant="secondary" className="shrink-0">
-                {artwork.qr_code}
+                QrCode
               </Badge>
             </div>
             <p className="text-lg text-muted-foreground">{artwork.artist}</p>
