@@ -40,7 +40,7 @@ export function ArtworkDetailModal({ artwork, isOpen, onClose, language, onLangu
               <p className="mt-1 text-muted-foreground">{artwork.artist}</p>
             </div>
             <Badge variant="secondary" className="shrink-0">
-              {artwork.qr_code}
+              QrCode
             </Badge>
           </div>
         </DialogHeader>
