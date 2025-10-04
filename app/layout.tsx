@@ -27,7 +27,8 @@ export default function RootLayout({
       <head>
         {/* Console mobile pour debug - À SUPPRIMER après */}
         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-        <script dangerouslySetInnerHTML={{ __html: 'eruda.init();' }} />
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" />
+          <script dangerouslySetInnerHTML={{ __html: 'eruda.init();' }} />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${playfair.variable}`}>
       <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>

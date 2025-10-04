@@ -9,6 +9,9 @@ import { Card } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Lock, AlertCircle } from "lucide-react"
 import { createBrowserClient } from "@/lib/supabase/client"
+import {Navigation} from "@/components/navigation";
+import {AdminNav} from "@/components/admin-nav";
+import {AdminOeuvresClient} from "@/components/admin-oeuvres-client";
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -45,6 +48,9 @@ export default function AdminLoginPage() {
   }
 
   return (
+
+  <div className="min-h-screen bg-muted/30">
+    <Navigation />
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md p-8">
         <div className="mb-8 text-center">
@@ -103,5 +109,7 @@ export default function AdminLoginPage() {
         </div>
       </Card>
     </div>
+  </div>
+
   )
 }

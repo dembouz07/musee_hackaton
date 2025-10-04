@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Menu, X, QrCode, ImageIcon, Shield } from "lucide-react"
+import { Menu, X, QrCode, ImageIcon, Shield, Maximize2 } from "lucide-react"
 import { useState } from "react"
 
 export function Navigation() {
@@ -13,6 +13,7 @@ export function Navigation() {
   const navItems = [
     { href: "/", label: "Accueil", icon: null },
     { href: "/galerie", label: "Galerie", icon: ImageIcon },
+    { href: "/galerie/3d", label: "Visite 3D", icon: Maximize2 },
     { href: "/scanner", label: "Scanner QR", icon: QrCode },
   ]
 
