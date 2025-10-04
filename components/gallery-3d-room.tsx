@@ -20,6 +20,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
     const [isLoading, setIsLoading] = useState(true)
     const [showControls, setShowControls] = useState(true)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
 
     const languages = [
         { code: "fr" as Language, label: "Français" },
@@ -55,6 +56,10 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
     useEffect(() => {
         if (typeof window === 'undefined' || !containerRef.current || initialArtworks.length === 0) return
+
+        // Détection mobile
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        setIsMobile(isMobileDevice)
 
         // @ts-ignore
         const THREE = window.THREE
@@ -304,14 +309,18 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             }
         }
 
-        renderer.domElement.addEventListener('mousemove', onMouseMove)
-        renderer.domElement.addEventListener('click', onClick)
+        // Événements souris (desktop)
+        if (!isMobileDevice) {
+            renderer.domElement.addEventListener('mousemove', onMouseMove)
+            renderer.domElement.addEventListener('click', onClick)
+        }
 
         let isDragging = false
         let previousMousePosition = { x: 0, y: 0 }
         let cameraRotation = { x: 0, y: 0 }
         let targetRotation = { x: 0, y: 0 }
 
+        // Contrôles souris (desktop)
         const onMouseDown = (e: MouseEvent) => {
             isDragging = true
             previousMousePosition = { x: e.clientX, y: e.clientY }
@@ -329,9 +338,92 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             previousMousePosition = { x: e.clientX, y: e.clientY }
         }
 
-        renderer.domElement.addEventListener('mousedown', onMouseDown)
-        renderer.domElement.addEventListener('mouseup', onMouseUp)
-        renderer.domElement.addEventListener('mousemove', onMouseDrag)
+        if (!isMobileDevice) {
+            renderer.domElement.addEventListener('mousedown', onMouseDown)
+            renderer.domElement.addEventListener('mouseup', onMouseUp)
+            renderer.domElement.addEventListener('mousemove', onMouseDrag)
+        }
+
+        // ===== CONTRÔLES TACTILES POUR MOBILE =====
+        let lastTouchDistance = 0
+        let lastTouchX = 0
+        let lastTouchY = 0
+        let touchStartTime = 0
+        let touchMoved = false
+
+        const onTouchStart = (e: TouchEvent) => {
+            touchStartTime = Date.now()
+            touchMoved = false
+
+            if (e.touches.length === 1) {
+                // Un doigt : rotation
+                isDragging = true
+                lastTouchX = e.touches[0].clientX
+                lastTouchY = e.touches[0].clientY
+            } else if (e.touches.length === 2) {
+                // Deux doigts : zoom
+                const dx = e.touches[0].clientX - e.touches[1].clientX
+                const dy = e.touches[0].clientY - e.touches[1].clientY
+                lastTouchDistance = Math.sqrt(dx * dx + dy * dy)
+            }
+        }
+
+        const onTouchMove = (e: TouchEvent) => {
+            e.preventDefault()
+            touchMoved = true
+
+            if (e.touches.length === 1 && isDragging) {
+                // Rotation avec un doigt (glisser)
+                const deltaX = e.touches[0].clientX - lastTouchX
+                const deltaY = e.touches[0].clientY - lastTouchY
+
+                targetRotation.y += deltaX * 0.01
+                targetRotation.x += deltaY * 0.01
+                targetRotation.x = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, targetRotation.x))
+
+                lastTouchX = e.touches[0].clientX
+                lastTouchY = e.touches[0].clientY
+            } else if (e.touches.length === 2) {
+                // Zoom avec deux doigts (pinch)
+                const dx = e.touches[0].clientX - e.touches[1].clientX
+                const dy = e.touches[0].clientY - e.touches[1].clientY
+                const distance = Math.sqrt(dx * dx + dy * dy)
+
+                if (lastTouchDistance > 0) {
+                    const delta = (lastTouchDistance - distance) * 0.05
+                    zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + delta))
+                }
+
+                lastTouchDistance = distance
+            }
+        }
+
+        const onTouchEnd = (e: TouchEvent) => {
+            // Détecter un tap rapide (clic) pour sélectionner une œuvre
+            if (!touchMoved && (Date.now() - touchStartTime) < 300 && e.changedTouches.length === 1) {
+                const touch = e.changedTouches[0]
+                const rect = renderer.domElement.getBoundingClientRect()
+                mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1
+                mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1
+                raycaster.setFromCamera(mouse, camera)
+                const intersects = raycaster.intersectObjects(artworkMeshes.map((a: any) => a.mesh))
+
+                if (intersects.length > 0) {
+                    const clicked = artworkMeshes.find((a: any) => a.mesh === intersects[0].object)
+                    if (clicked) setSelectedArtwork(clicked.artwork)
+                }
+            }
+
+            isDragging = false
+            if (e.touches.length < 2) {
+                lastTouchDistance = 0
+            }
+        }
+
+        // Ajouter les événements tactiles
+        renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false })
+        renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false })
+        renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false })
 
         let zoomLevel = 12
         const minZoom = 5
@@ -343,13 +435,19 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + delta))
         }
 
-        renderer.domElement.addEventListener('wheel', onWheel, { passive: false })
+        if (!isMobileDevice) {
+            renderer.domElement.addEventListener('wheel', onWheel, { passive: false })
+        }
 
+        // Contrôles clavier (desktop uniquement)
         const keys: Record<string, boolean> = {}
         const onKeyDown = (e: KeyboardEvent) => { keys[e.key.toLowerCase()] = true }
         const onKeyUp = (e: KeyboardEvent) => { keys[e.key.toLowerCase()] = false }
-        window.addEventListener('keydown', onKeyDown)
-        window.addEventListener('keyup', onKeyUp)
+
+        if (!isMobileDevice) {
+            window.addEventListener('keydown', onKeyDown)
+            window.addEventListener('keyup', onKeyUp)
+        }
 
         const animate = () => {
             requestAnimationFrame(animate)
@@ -362,13 +460,16 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             camera.position.y = 1.8 + zoomLevel * Math.sin(cameraRotation.x) * 0.15
             camera.lookAt(0, 4, 0)
 
-            const forward = new THREE.Vector3(Math.sin(cameraRotation.y), 0, Math.cos(cameraRotation.y))
-            const right = new THREE.Vector3(Math.cos(cameraRotation.y), 0, -Math.sin(cameraRotation.y))
+            // Déplacement clavier (desktop uniquement)
+            if (!isMobileDevice) {
+                const forward = new THREE.Vector3(Math.sin(cameraRotation.y), 0, Math.cos(cameraRotation.y))
+                const right = new THREE.Vector3(Math.cos(cameraRotation.y), 0, -Math.sin(cameraRotation.y))
 
-            if (keys['w'] || keys['arrowup']) camera.position.add(forward.multiplyScalar(0.2))
-            if (keys['s'] || keys['arrowdown']) camera.position.sub(forward.multiplyScalar(0.2))
-            if (keys['a'] || keys['arrowleft']) camera.position.sub(right.multiplyScalar(0.2))
-            if (keys['d'] || keys['arrowright']) camera.position.add(right.multiplyScalar(0.2))
+                if (keys['w'] || keys['arrowup']) camera.position.add(forward.multiplyScalar(0.2))
+                if (keys['s'] || keys['arrowdown']) camera.position.sub(forward.multiplyScalar(0.2))
+                if (keys['a'] || keys['arrowleft']) camera.position.sub(right.multiplyScalar(0.2))
+                if (keys['d'] || keys['arrowright']) camera.position.add(right.multiplyScalar(0.2))
+            }
 
             renderer.render(scene, camera)
         }
@@ -387,14 +488,19 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
         return () => {
             window.removeEventListener('resize', handleResize)
-            window.removeEventListener('keydown', onKeyDown)
-            window.removeEventListener('keyup', onKeyUp)
-            renderer.domElement.removeEventListener('mousemove', onMouseMove)
-            renderer.domElement.removeEventListener('click', onClick)
-            renderer.domElement.removeEventListener('mousedown', onMouseDown)
-            renderer.domElement.removeEventListener('mouseup', onMouseUp)
-            renderer.domElement.removeEventListener('mousemove', onMouseDrag)
-            renderer.domElement.removeEventListener('wheel', onWheel)
+            if (!isMobileDevice) {
+                window.removeEventListener('keydown', onKeyDown)
+                window.removeEventListener('keyup', onKeyUp)
+                renderer.domElement.removeEventListener('mousemove', onMouseMove)
+                renderer.domElement.removeEventListener('click', onClick)
+                renderer.domElement.removeEventListener('mousedown', onMouseDown)
+                renderer.domElement.removeEventListener('mouseup', onMouseUp)
+                renderer.domElement.removeEventListener('mousemove', onMouseDrag)
+                renderer.domElement.removeEventListener('wheel', onWheel)
+            }
+            renderer.domElement.removeEventListener('touchstart', onTouchStart)
+            renderer.domElement.removeEventListener('touchmove', onTouchMove)
+            renderer.domElement.removeEventListener('touchend', onTouchEnd)
             if (containerRef.current?.contains(renderer.domElement)) {
                 containerRef.current.removeChild(renderer.domElement)
             }
@@ -404,6 +510,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
     return (
         <div className="min-h-screen bg-background">
+
             <div className="relative" style={{ height: 'calc(100vh - 4rem)' }}>
                 <div ref={containerRef} className="h-full w-full" />
 
@@ -420,7 +527,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                 )}
 
                 {!isLoading && showControls && (
-                    <Card className="absolute top-6 left-6 p-5 max-w-sm bg-black/90 backdrop-blur-xl border-primary/30">
+                    <Card className={`absolute top-6 left-6 p-5 bg-black/90 backdrop-blur-xl border-primary/30 ${isMobile ? 'max-w-[280px]' : 'max-w-sm'}`}>
                         <div className="flex items-start justify-between mb-4">
                             <h3 className="font-serif font-bold text-primary flex items-center gap-2">
                                 <Info className="h-5 w-5" />
@@ -431,27 +538,55 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                             </Button>
                         </div>
                         <div className="space-y-3">
-                            <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
-                                <Move className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="text-sm font-medium text-white">Déplacer</p>
-                                    <p className="text-xs text-muted-foreground">WASD ou Flèches</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
-                                <RotateCw className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="text-sm font-medium text-white">Regarder</p>
-                                    <p className="text-xs text-muted-foreground">Glisser la souris</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
-                                <ZoomIn className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="text-sm font-medium text-white">Zoom</p>
-                                    <p className="text-xs text-muted-foreground">Molette de la souris</p>
-                                </div>
-                            </div>
+                            {isMobile ? (
+                                <>
+                                    <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
+                                        <RotateCw className="h-5 w-5 text-primary" />
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Regarder</p>
+                                            <p className="text-xs text-muted-foreground">Glisser avec 1 doigt</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
+                                        <ZoomIn className="h-5 w-5 text-primary" />
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Zoom</p>
+                                            <p className="text-xs text-muted-foreground">Pincer avec 2 doigts</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
+                                        <Info className="h-5 w-5 text-primary" />
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Sélectionner</p>
+                                            <p className="text-xs text-muted-foreground">Taper sur une œuvre</p>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
+                                        <Move className="h-5 w-5 text-primary" />
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Déplacer</p>
+                                            <p className="text-xs text-muted-foreground">WASD ou Flèches</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
+                                        <RotateCw className="h-5 w-5 text-primary" />
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Regarder</p>
+                                            <p className="text-xs text-muted-foreground">Glisser la souris</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
+                                        <ZoomIn className="h-5 w-5 text-primary" />
+                                        <div>
+                                            <p className="text-sm font-medium text-white">Zoom</p>
+                                            <p className="text-xs text-muted-foreground">Molette de la souris</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </Card>
                 )}
@@ -467,15 +602,17 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                     <Card className="px-5 py-3 bg-black/90 backdrop-blur-xl border-primary/30">
                         <p className="text-sm font-bold text-primary">{initialArtworks.length} Œuvres</p>
                     </Card>
-                    <Button variant="outline" size="sm" onClick={toggleFullscreen} className="bg-black/90 border-primary/30 text-primary hover:bg-black/80">
-                        {isFullscreen ? <Minimize2 className="h-4 w-4 mr-2" /> : <Maximize2 className="h-4 w-4 mr-2" />}
-                        {isFullscreen ? 'Quitter' : 'Plein écran'}
-                    </Button>
+                    {!isMobile && (
+                        <Button variant="outline" size="sm" onClick={toggleFullscreen} className="bg-black/90 border-primary/30 text-primary hover:bg-black/80">
+                            {isFullscreen ? <Minimize2 className="h-4 w-4 mr-2" /> : <Maximize2 className="h-4 w-4 mr-2" />}
+                            {isFullscreen ? 'Quitter' : 'Plein écran'}
+                        </Button>
+                    )}
                 </div>
 
                 {selectedArtwork && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 z-50">
-                        <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto bg-black border-primary/50">
+                        <Card className={`w-full max-h-[90vh] overflow-y-auto bg-black border-primary/50 ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
                             <div className="relative">
                                 <div className="w-full aspect-video bg-black flex items-center justify-center p-4">
                                     <img
@@ -489,13 +626,13 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                 </Button>
                                 <div className="absolute bottom-4 left-4 right-4">
                                     <Badge className="mb-2 bg-primary/90 text-black">{selectedArtwork.category?.name_fr}</Badge>
-                                    <h2 className="font-serif text-3xl font-bold text-white">{selectedArtwork.title}</h2>
-                                    <p className="text-lg text-white/90">{selectedArtwork.artist}</p>
+                                    <h2 className={`font-serif font-bold text-white ${isMobile ? 'text-xl' : 'text-3xl'}`}>{selectedArtwork.title}</h2>
+                                    <p className={`text-white/90 ${isMobile ? 'text-base' : 'text-lg'}`}>{selectedArtwork.artist}</p>
                                 </div>
                             </div>
 
-                            <div className="p-6 space-y-5">
-                                <div className="grid grid-cols-2 gap-4">
+                            <div className={`p-6 space-y-5 ${isMobile ? 'p-4 space-y-4' : ''}`}>
+                                <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                                     <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                                         <p className="text-xs font-semibold text-primary">ORIGINE</p>
                                         <p className="text-base font-bold text-white">{selectedArtwork.origin}</p>
@@ -511,7 +648,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                         <Globe className="h-5 w-5 text-primary" />
                                         <span className="text-sm font-semibold text-white">Langue</span>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className={`flex gap-2 ${isMobile ? 'flex-wrap' : ''}`}>
                                         {languages.map((lang) => (
                                             <Button
                                                 key={lang.code}
