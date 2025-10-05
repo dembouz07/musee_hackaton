@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { AudioPlayer } from "@/components/audio-player"
 import Image from "next/image"
 import type { Artwork, Language } from "@/lib/supabase/types"
-import { Globe } from "lucide-react"
+import { Globe, Volume2, X } from "lucide-react"
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null
@@ -26,77 +26,98 @@ export function ArtworkDetailModal({ artwork, isOpen, onClose, language, onLangu
   ]
 
   const description =
-    language === "fr" ? artwork.description_fr : language === "en" ? artwork.description_en : artwork.description_wo
+      language === "fr" ? artwork.description_fr : language === "en" ? artwork.description_en : artwork.description_wo
   const audioUrl =
-    language === "fr" ? artwork.audio_url_fr : language === "en" ? artwork.audio_url_en : artwork.audio_url_wo
+      language === "fr" ? artwork.audio_url_fr : language === "en" ? artwork.audio_url_en : artwork.audio_url_wo
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <DialogTitle className="font-serif text-2xl text-balance">{artwork.title}</DialogTitle>
-              <p className="mt-1 text-muted-foreground">{artwork.artist}</p>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto bg-gradient-to-b from-background to-muted/30 border-primary/20">
+          <DialogHeader className="relative">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <DialogTitle className="font-serif text-2xl text-balance text-primary">{artwork.title}</DialogTitle>
+                <p className="mt-1 text-base text-foreground/80">{artwork.artist}</p>
+              </div>
+              <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary border-primary/30">
+                {artwork.category?.name_fr || "Œuvre"}
+              </Badge>
             </div>
-            <Badge variant="secondary" className="shrink-0">
-              QrCode
-            </Badge>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
 
-        <div className="mt-4 grid gap-6 md:grid-cols-2">
-          {/* Image */}
-          <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-            <Image src={artwork.image_url || "/placeholder.svg"} alt={artwork.title} fill className="object-cover" />
-          </div>
+          <div className="mt-4 space-y-4">
+            {/* Image */}
+            <div className="relative h-64 w-full overflow-hidden rounded-lg bg-muted shadow-lg">
+              <Image
+                  src={artwork.image_url || "/placeholder.svg"}
+                  alt={artwork.title}
+                  fill
+                  className="object-contain p-2"
+              />
+            </div>
 
-          {/* Details */}
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/30 p-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Catégorie</p>
-                <p className="mt-1 font-medium text-foreground">{artwork.category?.name_fr || "Non catégorisé"}</p>
+            {/* Info Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs font-semibold text-primary mb-1">ORIGINE</p>
+                <p className="text-sm font-bold text-foreground">{artwork.origin}</p>
               </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Origine</p>
-                <p className="mt-1 font-medium text-foreground">{artwork.origin}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs font-medium text-muted-foreground">Période</p>
-                <p className="mt-1 font-medium text-foreground">{artwork.year || "Date inconnue"}</p>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs font-semibold text-primary mb-1">PÉRIODE</p>
+                <p className="text-sm font-bold text-foreground">{artwork.year || "Date inconnue"}</p>
               </div>
             </div>
 
             {/* Language Selector */}
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-primary">LANGUE</span>
+              </div>
               <div className="flex gap-2">
                 {languages.map((lang) => (
-                  <Button
-                    key={lang.code}
-                    size="sm"
-                    variant={language === lang.code ? "default" : "outline"}
-                    onClick={() => onLanguageChange(lang.code)}
-                    className={language === lang.code ? "" : "bg-transparent"}
-                  >
-                    {lang.label}
-                  </Button>
+                    <Button
+                        key={lang.code}
+                        size="sm"
+                        variant={language === lang.code ? "default" : "outline"}
+                        onClick={() => onLanguageChange(lang.code)}
+                        className={language === lang.code
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90 h-8 text-xs"
+                            : "border-primary/30 bg-transparent hover:bg-primary/10 h-8 text-xs"}
+                    >
+                      {lang.label}
+                    </Button>
                 ))}
               </div>
             </div>
 
             {/* Audio Player */}
-            {audioUrl && <AudioPlayer audioUrl={audioUrl} title={`Description audio - ${artwork.title}`} />}
+            {audioUrl && (
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <Volume2 className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-semibold text-primary">GUIDE AUDIO</span>
+                  </div>
+                  <AudioPlayer audioUrl={audioUrl} title={`Description audio - ${artwork.title}`} />
+                </div>
+            )}
 
             {/* Description */}
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h4 className="mb-2 font-serif text-sm font-bold text-foreground">Description</h4>
-              <p className="text-sm leading-relaxed text-pretty text-muted-foreground">{description}</p>
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+              <h4 className="mb-2 font-serif text-sm font-bold text-primary">Description</h4>
+              <p className="text-xs leading-relaxed text-pretty text-muted-foreground">{description}</p>
             </div>
+
+            {/* Close Button */}
+            <Button
+                onClick={onClose}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-10"
+                size="sm"
+            >
+              Fermer
+            </Button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
   )
 }

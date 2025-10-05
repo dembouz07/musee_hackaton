@@ -137,7 +137,7 @@ export default function HomePage() {
               Explorez dès maintenant les trésors du patrimoine africain
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/galerie">
+              <Link href="/galerie/3d">
                 <Button size="lg" className="gap-2">
                   <ImageIcon className="h-5 w-5" />
                   Voir la Galerie
