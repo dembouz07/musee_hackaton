@@ -333,6 +333,54 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
         renderer.domElement.addEventListener('mouseup', onMouseUp)
         renderer.domElement.addEventListener('mousemove', onMouseDrag)
 
+        // Touch support for mobile
+        let touchStartX = 0
+        let touchStartY = 0
+        let initialPinchDistance = 0
+
+        const getTouchDistance = (touch1: Touch, touch2: Touch) => {
+            const dx = touch2.clientX - touch1.clientX
+            const dy = touch2.clientY - touch1.clientY
+            return Math.sqrt(dx * dx + dy * dy)
+        }
+
+        const onTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 1) {
+                isDragging = true
+                touchStartX = e.touches[0].clientX
+                touchStartY = e.touches[0].clientY
+                previousMousePosition = { x: touchStartX, y: touchStartY }
+            } else if (e.touches.length === 2) {
+                isDragging = false
+                initialPinchDistance = getTouchDistance(e.touches[0], e.touches[1])
+            }
+        }
+
+        const onTouchMove = (e: TouchEvent) => {
+            e.preventDefault()
+
+            if (e.touches.length === 1 && isDragging) {
+                const touch = e.touches[0]
+                targetRotation.y += (touch.clientX - previousMousePosition.x) * 0.005
+                targetRotation.x += (touch.clientY - previousMousePosition.y) * 0.005
+                targetRotation.x = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, targetRotation.x))
+                previousMousePosition = { x: touch.clientX, y: touch.clientY }
+            } else if (e.touches.length === 2) {
+                const currentDistance = getTouchDistance(e.touches[0], e.touches[1])
+                const delta = (initialPinchDistance - currentDistance) * 0.02
+                zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + delta))
+                initialPinchDistance = currentDistance
+            }
+        }
+
+        const onTouchEnd = () => {
+            isDragging = false
+        }
+
+        renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false })
+        renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false })
+        renderer.domElement.addEventListener('touchend', onTouchEnd)
+
         let zoomLevel = 12
         const minZoom = 5
         const maxZoom = 20
@@ -395,6 +443,9 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             renderer.domElement.removeEventListener('mouseup', onMouseUp)
             renderer.domElement.removeEventListener('mousemove', onMouseDrag)
             renderer.domElement.removeEventListener('wheel', onWheel)
+            renderer.domElement.removeEventListener('touchstart', onTouchStart)
+            renderer.domElement.removeEventListener('touchmove', onTouchMove)
+            renderer.domElement.removeEventListener('touchend', onTouchEnd)
             if (containerRef.current?.contains(renderer.domElement)) {
                 containerRef.current.removeChild(renderer.domElement)
             }
@@ -436,21 +487,21 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                 <Move className="h-5 w-5 text-primary" />
                                 <div>
                                     <p className="text-sm font-medium text-white">Déplacer</p>
-                                    <p className="text-xs text-muted-foreground">WASD ou Flèches</p>
+                                    <p className="text-xs text-muted-foreground">WASD / Flèches / Glisser (Mobile)</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
                                 <RotateCw className="h-5 w-5 text-primary" />
                                 <div>
                                     <p className="text-sm font-medium text-white">Regarder</p>
-                                    <p className="text-xs text-muted-foreground">Glisser la souris</p>
+                                    <p className="text-xs text-muted-foreground">Glisser / 1 doigt (Mobile)</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
                                 <ZoomIn className="h-5 w-5 text-primary" />
                                 <div>
                                     <p className="text-sm font-medium text-white">Zoom</p>
-                                    <p className="text-xs text-muted-foreground">Molette de la souris</p>
+                                    <p className="text-xs text-muted-foreground">Molette / Pincer (Mobile)</p>
                                 </div>
                             </div>
                         </div>
@@ -478,7 +529,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                     <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-md p-4 z-50">
                         <Card className="max-w-3xl w-full max-h-[85vh] overflow-y-auto bg-gradient-to-b from-[#1a1a1a] to-white border-primary/30 shadow-2xl">
                             <div className="relative">
-                                <div className="w-full h-64 bg-gradient-to-b from-white/50 to-transparent flex items-center justify-center p-4">
+                                <div className="w-full h-64 bg-gradient-to-b from-black/50 to-transparent flex items-center justify-center p-4">
                                     <img
                                         src={selectedArtwork.image_url || "/placeholder.svg"}
                                         alt={selectedArtwork.title}
