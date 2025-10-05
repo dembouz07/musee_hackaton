@@ -472,36 +472,36 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                 )}
 
                 {!isLoading && showControls && (
-                    <Card className="absolute top-6 left-6 p-5 max-w-sm bg-black/90 backdrop-blur-xl border-primary/30">
-                        <div className="flex items-start justify-between mb-4">
-                            <h3 className="font-serif font-bold text-primary flex items-center gap-2">
-                                <Info className="h-5 w-5" />
+                    <Card className="absolute top-6 left-6 p-4 max-w-xs bg-black/90 backdrop-blur-xl border-primary/30 sm:max-w-sm">
+                        <div className="flex items-start justify-between mb-3">
+                            <h3 className="font-serif font-bold text-primary flex items-center gap-2 text-sm sm:text-base">
+                                <Info className="h-4 w-4 sm:h-5 sm:w-5" />
                                 Navigation
                             </h3>
-                            <Button variant="ghost" size="sm" onClick={() => setShowControls(false)} className="h-7 w-7 p-0 text-primary hover:text-primary/80">
-                                <X className="h-4 w-4" />
+                            <Button variant="ghost" size="sm" onClick={() => setShowControls(false)} className="h-6 w-6 p-0 text-primary hover:text-primary/80 sm:h-7 sm:w-7">
+                                <X className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                         </div>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
-                                <Move className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="text-sm font-medium text-white">Déplacer</p>
-                                    <p className="text-xs text-muted-foreground">WASD / Flèches / Glisser (Mobile)</p>
+                        <div className="space-y-2 sm:space-y-3">
+                            <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 sm:gap-3">
+                                <Move className="h-4 w-4 text-primary sm:h-5 sm:w-5 shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-xs font-medium text-white sm:text-sm">Déplacer</p>
+                                    <p className="text-[10px] text-muted-foreground sm:text-xs truncate">WASD / Flèches</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
-                                <RotateCw className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="text-sm font-medium text-white">Regarder</p>
-                                    <p className="text-xs text-muted-foreground">Glisser / 1 doigt (Mobile)</p>
+                            <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 sm:gap-3">
+                                <RotateCw className="h-4 w-4 text-primary sm:h-5 sm:w-5 shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-xs font-medium text-white sm:text-sm">Regarder</p>
+                                    <p className="text-[10px] text-muted-foreground sm:text-xs truncate">Glisser / 1 doigt</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 p-2 rounded-md bg-primary/10">
-                                <ZoomIn className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="text-sm font-medium text-white">Zoom</p>
-                                    <p className="text-xs text-muted-foreground">Molette / Pincer (Mobile)</p>
+                            <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 sm:gap-3">
+                                <ZoomIn className="h-4 w-4 text-primary sm:h-5 sm:w-5 shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-xs font-medium text-white sm:text-sm">Zoom</p>
+                                    <p className="text-[10px] text-muted-foreground sm:text-xs truncate">Molette / Pincer</p>
                                 </div>
                             </div>
                         </div>
@@ -509,68 +509,71 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                 )}
 
                 {!showControls && (
-                    <Button variant="outline" size="sm" onClick={() => setShowControls(true)} className="absolute top-6 left-6 bg-black/90 border-primary/30 text-primary hover:bg-black/80">
-                        <Info className="h-4 w-4 mr-2" />
+                    <Button variant="outline" size="sm" onClick={() => setShowControls(true)} className="absolute top-6 left-6 bg-black/90 border-primary/30 text-primary hover:bg-black/80 text-xs sm:text-sm h-8 sm:h-9 px-3">
+                        <Info className="h-3 w-3 mr-1.5 sm:h-4 sm:w-4 sm:mr-2" />
                         Aide
                     </Button>
                 )}
 
-                <div className="absolute top-6 right-6 flex flex-col gap-3">
-                    <Card className="px-5 py-3 bg-white backdrop-blur-xl border-primary/30">
-                        <p className="text-sm font-bold text-primary">{initialArtworks.length} œuvres</p>
+                <div className="absolute top-6 right-6 flex flex-col gap-2 sm:gap-3">
+                    <Card className="px-3 py-2 bg-white backdrop-blur-xl border-primary/30 sm:px-5 sm:py-3">
+                        <p className="text-xs font-bold text-primary sm:text-sm">{initialArtworks.length} œuvres</p>
                     </Card>
-                    <Button variant="outline" size="sm" onClick={toggleFullscreen} className="bg-black/90 border-primary/30 text-primary hover:bg-black/80">
-                        {isFullscreen ? <Minimize2 className="h-4 w-4 mr-2" /> : <Maximize2 className="h-4 w-4 mr-2" />}
-                        {isFullscreen ? 'Quitter' : 'Plein écran'}
+                    <Button variant="outline" size="sm" onClick={toggleFullscreen} className="bg-black/90 border-primary/30 text-primary hover:bg-black/80 text-xs sm:text-sm h-8 sm:h-9 px-3">
+                        {isFullscreen ? <Minimize2 className="h-3 w-3 mr-1.5 sm:h-4 sm:w-4 sm:mr-2" /> : <Maximize2 className="h-3 w-3 mr-1.5 sm:h-4 sm:w-4 sm:mr-2" />}
+                        <span className="hidden sm:inline">{isFullscreen ? 'Quitter' : 'Plein écran'}</span>
+                        <span className="sm:hidden">{isFullscreen ? 'Quitter' : 'Écran'}</span>
                     </Button>
                 </div>
 
                 {selectedArtwork && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-md p-4 z-50">
-                        <Card className="max-w-3xl w-full max-h-[85vh] overflow-y-auto bg-gradient-to-b from-[#1a1a1a] to-white border-primary/30 shadow-2xl">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-md p-3 z-50 sm:p-4">
+                        <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto bg-gradient-to-b from-[#1a1a1a] to-white border-primary/30 shadow-2xl sm:max-h-[85vh]">
                             <div className="relative">
-                                <div className="w-full h-64 bg-gradient-to-b from-black/50 to-transparent flex items-center justify-center p-4">
+                                <div className="w-full h-48 bg-gradient-to-b from-black/50 to-transparent flex items-center justify-center p-3 sm:h-64 sm:p-4">
                                     <img
                                         src={selectedArtwork.image_url || "/placeholder.svg"}
                                         alt={selectedArtwork.title}
                                         className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
                                     />
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => setSelectedArtwork(null)} className="absolute top-2 right-2 bg-black/80 hover:bg-black text-primary border border-primary/30">
-                                    <X className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" onClick={() => setSelectedArtwork(null)} className="absolute top-2 right-2 bg-black/80 hover:bg-black text-primary border border-primary/30 h-8 w-8 sm:h-9 sm:w-9">
+                                    <X className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
-                                <div className="absolute bottom-3 left-4 right-4">
-                                    <Badge className="mb-2 bg-primary text-black font-semibold">{selectedArtwork.category?.name_fr}</Badge>
-                                    <h2 className="font-serif text-2xl font-bold text-primary mb-1">{selectedArtwork.title}</h2>
-                                    <p className="text-base text-white/90">{selectedArtwork.artist}</p>
+                                <div className="absolute bottom-2 left-3 right-3 sm:bottom-3 sm:left-4 sm:right-4">
+                                    <Badge className="mb-1.5 bg-primary text-black font-semibold text-[10px] sm:text-xs sm:mb-2">{selectedArtwork.category?.name_fr}</Badge>
+                                    <h2 className="font-serif text-lg font-bold text-primary mb-0.5 sm:text-2xl sm:mb-1">{selectedArtwork.title}</h2>
+                                    <p className="text-sm text-white/90 sm:text-base">{selectedArtwork.artist}</p>
                                 </div>
                             </div>
 
-                            <div className="p-5 space-y-4">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
-                                        <p className="text-xs font-semibold text-primary mb-1">ORIGINE</p>
-                                        <p className="text-sm font-bold text-white">{selectedArtwork.origin}</p>
+                            <div className="p-4 space-y-3 sm:p-5 sm:space-y-4">
+                                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-2 sm:p-3">
+                                        <p className="text-[10px] font-semibold text-primary mb-0.5 sm:text-xs sm:mb-1">ORIGINE</p>
+                                        <p className="text-xs font-bold text-white sm:text-sm">{selectedArtwork.origin}</p>
                                     </div>
-                                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
-                                        <p className="text-xs font-semibold text-primary mb-1">PÉRIODE</p>
-                                        <p className="text-sm font-bold text-white">{selectedArtwork.year || "Date inconnue"}</p>
+                                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-2 sm:p-3">
+                                        <p className="text-[10px] font-semibold text-primary mb-0.5 sm:text-xs sm:mb-1">PÉRIODE</p>
+                                        <p className="text-xs font-bold text-white sm:text-sm">{selectedArtwork.year || "Date inconnue"}</p>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <div className="mb-2 flex items-center gap-2">
-                                        <Globe className="h-4 w-4 text-primary" />
-                                        <span className="text-xs font-semibold text-primary">LANGUE</span>
+                                    <div className="mb-1.5 flex items-center gap-2 sm:mb-2">
+                                        <Globe className="h-3 w-3 text-primary sm:h-4 sm:w-4" />
+                                        <span className="text-[10px] font-semibold text-primary sm:text-xs">LANGUE</span>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-1.5 sm:gap-2">
                                         {languages.map((lang) => (
                                             <Button
                                                 key={lang.code}
                                                 size="sm"
                                                 variant={language === lang.code ? "default" : "outline"}
                                                 onClick={() => setLanguage(lang.code)}
-                                                className={language === lang.code ? "bg-primary text-black hover:bg-primary/90 h-8 text-xs" : "border-primary/30 text-primary bg-transparent hover:bg-primary/10 h-8 text-xs"}
+                                                className={language === lang.code
+                                                    ? "bg-primary text-black hover:bg-primary/90 h-7 text-[10px] px-2 sm:h-8 sm:text-xs sm:px-3"
+                                                    : "border-primary/30 text-primary bg-transparent hover:bg-primary/10 h-7 text-[10px] px-2 sm:h-8 sm:text-xs sm:px-3"}
                                             >
                                                 {lang.label}
                                             </Button>
@@ -580,20 +583,20 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
                                 {audioUrl && (
                                     <div>
-                                        <div className="mb-2 flex items-center gap-2">
-                                            <Volume2 className="h-4 w-4 text-primary" />
-                                            <span className="text-xs font-semibold text-primary">GUIDE AUDIO</span>
+                                        <div className="mb-1.5 flex items-center gap-2 sm:mb-2">
+                                            <Volume2 className="h-3 w-3 text-primary sm:h-4 sm:w-4" />
+                                            <span className="text-[10px] font-semibold text-primary sm:text-xs">GUIDE AUDIO</span>
                                         </div>
                                         <AudioPlayer audioUrl={audioUrl} title={`${selectedArtwork.title} - Description`} />
                                     </div>
                                 )}
 
-                                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-                                    <h3 className="font-serif font-bold text-primary mb-2 text-sm">Description</h3>
-                                    <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+                                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 sm:p-4">
+                                    <h3 className="font-serif font-bold text-primary mb-1.5 text-xs sm:text-sm sm:mb-2">Description</h3>
+                                    <p className="text-[10px] leading-relaxed text-muted-foreground sm:text-xs">{description}</p>
                                 </div>
 
-                                <Button onClick={() => setSelectedArtwork(null)} className="w-full bg-primary hover:bg-primary/90 text-black font-semibold h-10" size="sm">
+                                <Button onClick={() => setSelectedArtwork(null)} className="w-full bg-primary hover:bg-primary/90 text-black font-semibold h-9 text-xs sm:h-10 sm:text-sm" size="sm">
                                     Continuer la visite
                                 </Button>
                             </div>
