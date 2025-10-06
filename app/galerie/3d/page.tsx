@@ -1,4 +1,4 @@
-import { Gallery3DRoom } from "@/components/gallery-3d-room"
+import {Gallery3DRoom} from "@/components/gallery-3d-room"
 import { createClient } from "@/lib/supabase/server"
 import {Navigation} from "@/components/navigation";
 

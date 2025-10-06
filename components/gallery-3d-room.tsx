@@ -4,10 +4,26 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { X, Info, Move, RotateCw, ZoomIn, Globe, Maximize2, Minimize2, Volume2 } from "lucide-react"
-import { Navigation } from "@/components/navigation"
-import { AudioPlayer } from "@/components/audio-player"
-import type { Artwork, Language } from "@/lib/supabase/types"
+import { X, Info, Move, RotateCw, ZoomIn, Globe, Maximize2, Minimize2, Volume2, ArrowUp, ArrowDown } from "lucide-react"
+
+// Types
+interface Artwork {
+    id: string
+    title: string
+    artist: string
+    image_url: string
+    description_fr: string
+    description_en: string
+    description_wo: string
+    audio_url_fr?: string
+    audio_url_en?: string
+    audio_url_wo?: string
+    origin: string
+    year?: string
+    category?: { name_fr: string }
+}
+
+type Language = "fr" | "en" | "wo"
 
 interface Gallery3DRoomProps {
     initialArtworks: Artwork[]
@@ -20,6 +36,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
     const [isLoading, setIsLoading] = useState(true)
     const [showControls, setShowControls] = useState(true)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [currentFloor, setCurrentFloor] = useState(1)
 
     const languages = [
         { code: "fr" as Language, label: "Français" },
@@ -62,8 +79,9 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
         const container = containerRef.current
         const scene = new THREE.Scene()
-        scene.fog = new THREE.FogExp2(0x1a1a1a, 0.015)
+        scene.fog = new THREE.FogExp2(0x1a1a1a, 0.008)
 
+        // Background gradient
         const canvas = document.createElement('canvas')
         canvas.width = 2
         canvas.height = 512
@@ -79,7 +97,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
         }
 
         const camera = new THREE.PerspectiveCamera(65, container.clientWidth / container.clientHeight, 0.1, 100)
-        camera.position.set(0, 1.8, 12)
+        camera.position.set(0, 2, 20)
 
         const renderer = new THREE.WebGLRenderer({ antialias: true })
         renderer.setSize(container.clientWidth, container.clientHeight)
@@ -90,33 +108,23 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
         renderer.toneMappingExposure = 0.8
         container.appendChild(renderer.domElement)
 
-        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.4)
+        // Lumières principales
+        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.6)
         scene.add(ambientLight)
 
         const mainLight = new THREE.DirectionalLight(0xFFFFFF, 1.2)
-        mainLight.position.set(15, 20, 10)
+        mainLight.position.set(0, 30, 0)
         mainLight.castShadow = true
         mainLight.shadow.mapSize.width = 4096
         mainLight.shadow.mapSize.height = 4096
         scene.add(mainLight)
 
-        const createMuseumLight = (x: number, z: number) => {
-            const light = new THREE.SpotLight(0xFF8C42, 1.0)
-            light.position.set(x, 8, z)
-            light.angle = Math.PI / 5
-            light.penumbra = 0.6
-            light.castShadow = true
-            scene.add(light)
-        }
-
-        createMuseumLight(-10, -8)
-        createMuseumLight(0, -8)
-        createMuseumLight(10, -8)
-
-        const floorGeometry = new THREE.PlaneGeometry(50, 50)
+        // ARCHITECTURE - RDC (Rez-de-chaussée)
+        // Sol RDC
+        const floorGeometry = new THREE.PlaneGeometry(70, 70)
         const floorMaterial = new THREE.MeshStandardMaterial({
-            color: 0x2a2a2a,
-            roughness: 0.9,
+            color: 0xd4a574,
+            roughness: 0.8,
             metalness: 0.1
         })
         const floor = new THREE.Mesh(floorGeometry, floorMaterial)
@@ -124,97 +132,348 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
         floor.receiveShadow = true
         scene.add(floor)
 
+        // Motif radial au sol (inspiré de l'image)
+        const radialLines = 16
+        for (let i = 0; i < radialLines; i++) {
+            const angle = (i / radialLines) * Math.PI * 2
+            const lineGeometry = new THREE.PlaneGeometry(35, 0.3)
+            const lineMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 })
+            const line = new THREE.Mesh(lineGeometry, lineMaterial)
+            line.rotation.x = -Math.PI / 2
+            line.rotation.z = angle
+            line.position.y = 0.01
+            scene.add(line)
+        }
+
+        // Cercles concentriques
+        for (let radius of [8, 15, 25]) {
+            const circleGeometry = new THREE.RingGeometry(radius - 0.15, radius + 0.15, 64)
+            const circleMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 })
+            const circle = new THREE.Mesh(circleGeometry, circleMaterial)
+            circle.rotation.x = -Math.PI / 2
+            circle.position.y = 0.01
+            scene.add(circle)
+        }
+
+        // Murs RDC
+        const wallHeight = 10
         const wallMaterial = new THREE.MeshStandardMaterial({
-            color: 0xF5F5F5,
-            roughness: 0.95
+            color: 0xc19a6b,
+            roughness: 0.9,
+            metalness: 0.05
         })
 
-        const backWall = new THREE.Mesh(new THREE.PlaneGeometry(50, 12), wallMaterial)
-        backWall.position.set(0, 6, -18)
-        backWall.receiveShadow = true
+        // Mur arrière
+        const backWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, wallHeight),
+            wallMaterial
+        )
+        backWall.position.set(0, wallHeight / 2, -35)
         scene.add(backWall)
 
-        const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(40, 12), wallMaterial)
-        leftWall.position.set(-25, 6, 0)
+        // Mur avant (avec ouverture)
+        const frontWallLeft = new THREE.Mesh(
+            new THREE.PlaneGeometry(25, wallHeight),
+            wallMaterial
+        )
+        frontWallLeft.position.set(-22.5, wallHeight / 2, 35)
+        frontWallLeft.rotation.y = Math.PI
+        scene.add(frontWallLeft)
+
+        const frontWallRight = new THREE.Mesh(
+            new THREE.PlaneGeometry(25, wallHeight),
+            wallMaterial
+        )
+        frontWallRight.position.set(22.5, wallHeight / 2, 35)
+        frontWallRight.rotation.y = Math.PI
+        scene.add(frontWallRight)
+
+        // Murs latéraux
+        const leftWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, wallHeight),
+            wallMaterial
+        )
+        leftWall.position.set(-35, wallHeight / 2, 0)
         leftWall.rotation.y = Math.PI / 2
-        leftWall.receiveShadow = true
         scene.add(leftWall)
 
-        const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(40, 12), wallMaterial)
-        rightWall.position.set(25, 6, 0)
+        const rightWall = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, wallHeight),
+            wallMaterial
+        )
+        rightWall.position.set(35, wallHeight / 2, 0)
         rightWall.rotation.y = -Math.PI / 2
-        rightWall.receiveShadow = true
         scene.add(rightWall)
 
-        const signGroup = new THREE.Group()
-        const signBoard = new THREE.Mesh(
-            new THREE.BoxGeometry(14, 1.8, 0.2),
-            new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.7 })
-        )
-        signBoard.castShadow = true
-        signGroup.add(signBoard)
-
-        const border = new THREE.Mesh(
-            new THREE.BoxGeometry(14.3, 2.1, 0.15),
-            new THREE.MeshStandardMaterial({ color: 0xFF8C42, roughness: 0.3, metalness: 0.8 })
-        )
-        border.position.z = -0.05
-        signGroup.add(border)
-
-        const signCanvas = document.createElement('canvas')
-        signCanvas.width = 1400
-        signCanvas.height = 180
-        const signCtx = signCanvas.getContext('2d')!
-        signCtx.fillStyle = '#1a1a1a'
-        signCtx.fillRect(0, 0, 1400, 180)
-        signCtx.font = 'bold 70px serif'
-        signCtx.textAlign = 'center'
-        signCtx.textBaseline = 'middle'
-        signCtx.fillStyle = '#FF8C42'
-        signCtx.shadowColor = 'rgba(255, 140, 66, 0.8)'
-        signCtx.shadowBlur = 15
-        signCtx.fillText('MUSÉE DES', 700, 60)
-        signCtx.fillText('CIVILISATIONS NOIRES', 700, 130)
-
-        const textMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(14, 1.8),
-            new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(signCanvas) })
-        )
-        textMesh.position.z = 0.11
-        signGroup.add(textMesh)
-        signGroup.position.set(0, 9.5, -17.8)
-        scene.add(signGroup)
-
+        // PLAFOND RDC avec motifs géométriques
+        const ceilingMaterial = new THREE.MeshStandardMaterial({
+            color: 0xf5f5f5,
+            roughness: 0.9,
+            metalness: 0.1
+        })
         const ceiling = new THREE.Mesh(
-            new THREE.PlaneGeometry(50, 40),
-            new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9 })
+            new THREE.PlaneGeometry(70, 70),
+            ceilingMaterial
         )
-        ceiling.position.set(0, 12, 0)
+        ceiling.position.set(0, wallHeight, 0)
         ceiling.rotation.x = Math.PI / 2
         scene.add(ceiling)
 
+        // Motifs géométriques au plafond (inspiré du design du musée)
+        const ceilingPatternMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8b6f47,
+            roughness: 0.7
+        })
+        for (let i = -3; i <= 3; i++) {
+            for (let j = -3; j <= 3; j++) {
+                const pattern = new THREE.Mesh(
+                    new THREE.BoxGeometry(3, 0.2, 3),
+                    ceilingPatternMaterial
+                )
+                pattern.position.set(i * 8, wallHeight - 0.1, j * 8)
+                scene.add(pattern)
+            }
+        }
+
+        // ARBRE CENTRAL (sculpture inspirée des images)
         const textureLoader = new THREE.TextureLoader()
+        textureLoader.crossOrigin = 'anonymous'
+
+        const treeGroup = new THREE.Group()
+
+        // Tronc principal
+        const trunkGeometry = new THREE.CylinderGeometry(0.8, 1.2, 8, 8)
+        const trunkMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8b4513,
+            roughness: 0.9,
+            metalness: 0.1
+        })
+        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial)
+        trunk.position.y = 4
+        treeGroup.add(trunk)
+
+        // Branches métalliques (style sculpture)
+        const branchMaterial = new THREE.MeshStandardMaterial({
+            color: 0xa0826d,
+            roughness: 0.4,
+            metalness: 0.6
+        })
+
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2
+            const branchLength = 3 + Math.random() * 2
+            const branchGeometry = new THREE.CylinderGeometry(0.1, 0.05, branchLength, 6)
+            const branch = new THREE.Mesh(branchGeometry, branchMaterial)
+
+            branch.position.set(
+                Math.cos(angle) * 1,
+                6 + Math.random() * 2,
+                Math.sin(angle) * 1
+            )
+            branch.rotation.z = Math.PI / 6 + Math.random() * 0.3
+            branch.rotation.y = angle
+
+            treeGroup.add(branch)
+
+            // Sous-branches
+            for (let j = 0; j < 3; j++) {
+                const subBranchGeometry = new THREE.CylinderGeometry(0.05, 0.02, 1 + Math.random(), 4)
+                const subBranch = new THREE.Mesh(subBranchGeometry, branchMaterial)
+                subBranch.position.set(
+                    Math.cos(angle) * (1.5 + j * 0.5),
+                    7 + j * 0.5,
+                    Math.sin(angle) * (1.5 + j * 0.5)
+                )
+                subBranch.rotation.z = Math.PI / 4
+                subBranch.rotation.y = angle + Math.random() * 0.5
+                treeGroup.add(subBranch)
+            }
+        }
+
+        // Feuillage (particules dorées)
+        const foliageGeometry = new THREE.SphereGeometry(0.1, 4, 4)
+        const foliageMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFFD700,
+            emissive: 0xFFAA00,
+            emissiveIntensity: 0.3
+        })
+
+        for (let i = 0; i < 50; i++) {
+            const leaf = new THREE.Mesh(foliageGeometry, foliageMaterial)
+            const angle = Math.random() * Math.PI * 2
+            const radius = 2 + Math.random() * 2
+            leaf.position.set(
+                Math.cos(angle) * radius,
+                7 + Math.random() * 3,
+                Math.sin(angle) * radius
+            )
+            treeGroup.add(leaf)
+        }
+
+        treeGroup.position.set(0, 0, 0)
+        scene.add(treeGroup)
+
+        // Lumière pour l'arbre
+        const treeLight = new THREE.PointLight(0xFFDD99, 2.5, 15)
+        treeLight.position.set(0, 10, 0)
+        treeLight.castShadow = true
+        scene.add(treeLight)
+
+        // ESCALIER vers l'étage
+        const stairMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8b6f47,
+            roughness: 0.8
+        })
+        const stairGroup = new THREE.Group()
+
+        const numSteps = 15
+        const stepWidth = 4
+        const stepDepth = 0.8
+        const stepHeight = wallHeight / numSteps
+
+        for (let i = 0; i < numSteps; i++) {
+            const step = new THREE.Mesh(
+                new THREE.BoxGeometry(stepWidth, stepHeight * 0.8, stepDepth),
+                stairMaterial
+            )
+            step.position.set(25, i * stepHeight + stepHeight / 2, -30 + i * stepDepth)
+            step.castShadow = true
+            step.receiveShadow = true
+            stairGroup.add(step)
+
+            // Rampe
+            const railing = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 1, stepDepth),
+                new THREE.MeshStandardMaterial({ color: 0x654321 })
+            )
+            railing.position.set(25 + stepWidth/2, i * stepHeight + 1, -30 + i * stepDepth)
+            stairGroup.add(railing)
+        }
+        scene.add(stairGroup)
+
+        // SOL ÉTAGE 1
+        const floor1 = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, 70),
+            new THREE.MeshStandardMaterial({
+                color: 0xc19a6b,
+                roughness: 0.8,
+                transparent: true,
+                opacity: 0.95
+            })
+        )
+        floor1.rotation.x = -Math.PI / 2
+        floor1.position.y = wallHeight
+        floor1.receiveShadow = true
+        scene.add(floor1)
+
+        // Ouverture centrale à l'étage pour voir l'arbre
+        const holeSize = 12
+        const floorParts = []
+
+        // 4 sections de plancher autour de l'ouverture
+        const sections = [
+            { x: -29, z: -29, w: 40, h: 40 }, // Arrière gauche
+            { x: 29, z: -29, w: 40, h: 40 },  // Arrière droite
+            { x: -29, z: 29, w: 40, h: 40 },  // Avant gauche
+            { x: 29, z: 29, w: 40, h: 40 }    // Avant droite
+        ]
+
+        sections.forEach(section => {
+            const floorPart = new THREE.Mesh(
+                new THREE.PlaneGeometry(section.w, section.h),
+                new THREE.MeshStandardMaterial({
+                    color: 0xc19a6b,
+                    roughness: 0.8
+                })
+            )
+            floorPart.rotation.x = -Math.PI / 2
+            floorPart.position.set(section.x, wallHeight, section.z)
+            floorPart.receiveShadow = true
+            scene.add(floorPart)
+        })
+
+        // Garde-corps autour de l'ouverture
+        const railingMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8b6f47,
+            roughness: 0.6,
+            metalness: 0.3
+        })
+
+        for (let i = 0; i < 4; i++) {
+            const angle = (i / 4) * Math.PI * 2
+            const railing = new THREE.Mesh(
+                new THREE.BoxGeometry(holeSize * 1.5, 1.2, 0.1),
+                railingMaterial
+            )
+            railing.position.set(
+                Math.cos(angle + Math.PI/4) * (holeSize/2),
+                wallHeight + 0.6,
+                Math.sin(angle + Math.PI/4) * (holeSize/2)
+            )
+            railing.rotation.y = angle + Math.PI/4
+            scene.add(railing)
+        }
+
+        // MURS ÉTAGE 1
+        const wall1Height = 6
+
+        const backWall1 = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, wall1Height),
+            wallMaterial
+        )
+        backWall1.position.set(0, wallHeight + wall1Height / 2, -35)
+        scene.add(backWall1)
+
+        const frontWall1 = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, wall1Height),
+            wallMaterial
+        )
+        frontWall1.position.set(0, wallHeight + wall1Height / 2, 35)
+        frontWall1.rotation.y = Math.PI
+        scene.add(frontWall1)
+
+        const leftWall1 = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, wall1Height),
+            wallMaterial
+        )
+        leftWall1.position.set(-35, wallHeight + wall1Height / 2, 0)
+        leftWall1.rotation.y = Math.PI / 2
+        scene.add(leftWall1)
+
+        const rightWall1 = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, wall1Height),
+            wallMaterial
+        )
+        rightWall1.position.set(35, wallHeight + wall1Height / 2, 0)
+        rightWall1.rotation.y = -Math.PI / 2
+        scene.add(rightWall1)
+
+        // PLAFOND ÉTAGE 1
+        const ceiling1 = new THREE.Mesh(
+            new THREE.PlaneGeometry(70, 70),
+            ceilingMaterial
+        )
+        ceiling1.position.set(0, wallHeight + wall1Height, 0)
+        ceiling1.rotation.x = Math.PI / 2
+        scene.add(ceiling1)
+
+        // DISPOSITION DES ŒUVRES
         const artworkMeshes: any[] = []
 
+        // RDC - TOUTES les œuvres en cercle autour de l'arbre
+        const rdcRadius = 18
         initialArtworks.forEach((artwork, index) => {
             const frameGroup = new THREE.Group()
-            const spacing = 7
+            const angle = (index / initialArtworks.length) * Math.PI * 2
 
-            let position, rotation
-            if (index < 4) {
-                position = new THREE.Vector3((index - 1.5) * spacing, 4.5, -17.7)
-                rotation = new THREE.Euler(0, 0, 0)
-            } else if (index < 7) {
-                position = new THREE.Vector3(-24.7, 4.5, (index - 5) * spacing)
-                rotation = new THREE.Euler(0, Math.PI / 2, 0)
-            } else {
-                position = new THREE.Vector3(24.7, 4.5, (index - 8) * spacing)
-                rotation = new THREE.Euler(0, -Math.PI / 2, 0)
-            }
+            frameGroup.position.set(
+                Math.sin(angle) * rdcRadius,
+                5,
+                Math.cos(angle) * rdcRadius
+            )
+            frameGroup.rotation.y = -angle
 
-            frameGroup.position.copy(position)
-            frameGroup.rotation.copy(rotation)
-
+            // Cadre extérieur
             const outerFrame = new THREE.Mesh(
                 new THREE.BoxGeometry(3.2, 3.2, 0.2),
                 new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.5 })
@@ -222,6 +481,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             outerFrame.castShadow = true
             frameGroup.add(outerFrame)
 
+            // Cadre intérieur doré
             const innerFrame = new THREE.Mesh(
                 new THREE.BoxGeometry(3.0, 3.0, 0.15),
                 new THREE.MeshStandardMaterial({ color: 0xFF8C42, roughness: 0.3, metalness: 0.8 })
@@ -229,6 +489,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             innerFrame.position.z = 0.025
             frameGroup.add(innerFrame)
 
+            // Canvas avec image
             const canvas = new THREE.Mesh(
                 new THREE.PlaneGeometry(2.6, 2.6),
                 new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 })
@@ -244,6 +505,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
             frameGroup.add(canvas)
 
+            // Plaque titre
             const label = new THREE.Mesh(
                 new THREE.BoxGeometry(2.4, 0.4, 0.08),
                 new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 })
@@ -251,21 +513,96 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
             label.position.set(0, -1.9, 0.12)
             frameGroup.add(label)
 
-            const artSpotlight = new THREE.SpotLight(0xFFFFFF, 1.5)
-            artSpotlight.position.set(
-                position.x + Math.sin(rotation.y) * 3,
-                position.y + 4,
-                position.z + Math.cos(rotation.y) * 3
-            )
+            // Éclairage spot
+            const artSpotlight = new THREE.SpotLight(0xFFFFFF, 1.8)
+            artSpotlight.position.copy(frameGroup.position)
+            artSpotlight.position.y += 4
             artSpotlight.target = canvas
             artSpotlight.angle = Math.PI / 10
             artSpotlight.penumbra = 0.8
             scene.add(artSpotlight)
 
             scene.add(frameGroup)
-            artworkMeshes.push({ mesh: canvas, artwork })
+            artworkMeshes.push({ mesh: canvas, artwork, floor: 1 })
         })
 
+        // ÉTAGE 1 - TOUTES les œuvres le long des murs
+        const wallPositions = [
+            { x: 0, z: -32, ry: 0 },      // Mur arrière
+            { x: -32, z: 0, ry: Math.PI/2 }, // Mur gauche
+            { x: 32, z: 0, ry: -Math.PI/2 },  // Mur droit
+        ]
+
+        initialArtworks.forEach((artwork, index) => {
+            const wallIndex = index % wallPositions.length
+            const posOnWall = Math.floor(index / wallPositions.length)
+            const spacing = 8
+            const offset = (posOnWall - Math.floor(initialArtworks.length / wallPositions.length / 2)) * spacing
+
+            const frameGroup = new THREE.Group()
+            const wallPos = wallPositions[wallIndex]
+
+            if (wallIndex === 0) { // Mur arrière
+                frameGroup.position.set(offset, wallHeight + 3, wallPos.z)
+            } else { // Murs latéraux
+                frameGroup.position.set(wallPos.x, wallHeight + 3, offset)
+            }
+            frameGroup.rotation.y = wallPos.ry
+
+            // Cadre extérieur
+            const outerFrame = new THREE.Mesh(
+                new THREE.BoxGeometry(3.2, 3.2, 0.2),
+                new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.5 })
+            )
+            outerFrame.castShadow = true
+            frameGroup.add(outerFrame)
+
+            // Cadre intérieur doré
+            const innerFrame = new THREE.Mesh(
+                new THREE.BoxGeometry(3.0, 3.0, 0.15),
+                new THREE.MeshStandardMaterial({ color: 0xFF8C42, roughness: 0.3, metalness: 0.8 })
+            )
+            innerFrame.position.z = 0.025
+            frameGroup.add(innerFrame)
+
+            // Canvas
+            const canvas = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.6, 2.6),
+                new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 })
+            )
+            canvas.position.z = 0.11
+
+            if (artwork.image_url) {
+                textureLoader.load(artwork.image_url, (texture: any) => {
+                    canvas.material.map = texture
+                    canvas.material.needsUpdate = true
+                })
+            }
+
+            frameGroup.add(canvas)
+
+            // Plaque
+            const label = new THREE.Mesh(
+                new THREE.BoxGeometry(2.4, 0.4, 0.08),
+                new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 })
+            )
+            label.position.set(0, -1.9, 0.12)
+            frameGroup.add(label)
+
+            // Éclairage
+            const artSpotlight = new THREE.SpotLight(0xFFFFFF, 1.8)
+            artSpotlight.position.copy(frameGroup.position)
+            artSpotlight.position.y += 3
+            artSpotlight.target = canvas
+            artSpotlight.angle = Math.PI / 10
+            artSpotlight.penumbra = 0.8
+            scene.add(artSpotlight)
+
+            scene.add(frameGroup)
+            artworkMeshes.push({ mesh: canvas, artwork, floor: 2 })
+        })
+
+        // INTERACTIONS
         const raycaster = new THREE.Raycaster()
         const mouse = new THREE.Vector2()
         let hoveredMesh: any = null
@@ -300,17 +637,22 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
             if (intersects.length > 0) {
                 const clicked = artworkMeshes.find((a: any) => a.mesh === intersects[0].object)
-                if (clicked) setSelectedArtwork(clicked.artwork)
+                if (clicked) {
+                    setSelectedArtwork(clicked.artwork)
+                    setCurrentFloor(clicked.floor)
+                }
             }
         }
 
         renderer.domElement.addEventListener('mousemove', onMouseMove)
         renderer.domElement.addEventListener('click', onClick)
 
+        // CONTRÔLES CAMÉRA
         let isDragging = false
         let previousMousePosition = { x: 0, y: 0 }
         let cameraRotation = { x: 0, y: 0 }
         let targetRotation = { x: 0, y: 0 }
+        let cameraHeight = 2
 
         const onMouseDown = (e: MouseEvent) => {
             isDragging = true
@@ -333,7 +675,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
         renderer.domElement.addEventListener('mouseup', onMouseUp)
         renderer.domElement.addEventListener('mousemove', onMouseDrag)
 
-        // Touch support for mobile
+        // CONTRÔLES TACTILES
         let touchStartX = 0
         let touchStartY = 0
         let initialPinchDistance = 0
@@ -381,9 +723,10 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
         renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false })
         renderer.domElement.addEventListener('touchend', onTouchEnd)
 
-        let zoomLevel = 12
-        const minZoom = 5
-        const maxZoom = 20
+        // ZOOM
+        let zoomLevel = 20
+        const minZoom = 8
+        const maxZoom = 35
 
         const onWheel = (e: WheelEvent) => {
             e.preventDefault()
@@ -393,12 +736,25 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
         renderer.domElement.addEventListener('wheel', onWheel, { passive: false })
 
+        // CONTRÔLES CLAVIER
         const keys: Record<string, boolean> = {}
-        const onKeyDown = (e: KeyboardEvent) => { keys[e.key.toLowerCase()] = true }
+        const onKeyDown = (e: KeyboardEvent) => {
+            keys[e.key.toLowerCase()] = true
+
+            // Changer d'étage avec PageUp/PageDown
+            if (e.key === 'PageUp' && cameraHeight < wallHeight + 2) {
+                cameraHeight = wallHeight + 2
+                setCurrentFloor(2)
+            } else if (e.key === 'PageDown' && cameraHeight > 2) {
+                cameraHeight = 2
+                setCurrentFloor(1)
+            }
+        }
         const onKeyUp = (e: KeyboardEvent) => { keys[e.key.toLowerCase()] = false }
         window.addEventListener('keydown', onKeyDown)
         window.addEventListener('keyup', onKeyUp)
 
+        // ANIMATION
         const animate = () => {
             requestAnimationFrame(animate)
 
@@ -407,16 +763,25 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
 
             camera.position.x = zoomLevel * Math.sin(cameraRotation.y)
             camera.position.z = zoomLevel * Math.cos(cameraRotation.y)
-            camera.position.y = 1.8 + zoomLevel * Math.sin(cameraRotation.x) * 0.15
-            camera.lookAt(0, 4, 0)
+            camera.position.y = cameraHeight + zoomLevel * Math.sin(cameraRotation.x) * 0.15
+            camera.lookAt(0, cameraHeight - 0.5, 0)
 
             const forward = new THREE.Vector3(Math.sin(cameraRotation.y), 0, Math.cos(cameraRotation.y))
             const right = new THREE.Vector3(Math.cos(cameraRotation.y), 0, -Math.sin(cameraRotation.y))
 
-            if (keys['w'] || keys['arrowup']) camera.position.add(forward.multiplyScalar(0.2))
-            if (keys['s'] || keys['arrowdown']) camera.position.sub(forward.multiplyScalar(0.2))
-            if (keys['a'] || keys['arrowleft']) camera.position.sub(right.multiplyScalar(0.2))
-            if (keys['d'] || keys['arrowright']) camera.position.add(right.multiplyScalar(0.2))
+            const moveSpeed = 0.3
+
+            if (keys['z'] || keys['w'] || keys['arrowup']) camera.position.add(forward.multiplyScalar(moveSpeed))
+            if (keys['s'] || keys['arrowdown']) camera.position.sub(forward.multiplyScalar(moveSpeed))
+            if (keys['q'] || keys['a'] || keys['arrowleft']) camera.position.sub(right.multiplyScalar(moveSpeed))
+            if (keys['d'] || keys['arrowright']) camera.position.add(right.multiplyScalar(moveSpeed))
+
+            // Limites de mouvement
+            camera.position.x = Math.max(-30, Math.min(30, camera.position.x))
+            camera.position.z = Math.max(-30, Math.min(30, camera.position.z))
+
+            // Animation de l'arbre (légère rotation)
+            treeGroup.rotation.y += 0.001
 
             renderer.render(scene, camera)
         }
@@ -453,9 +818,17 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
         }
     }, [initialArtworks])
 
+    const changeFloor = (floor: number) => {
+        setCurrentFloor(floor)
+        // Déclencher un événement clavier pour changer la hauteur de la caméra
+        const event = new KeyboardEvent('keydown', {
+            key: floor === 2 ? 'PageUp' : 'PageDown'
+        })
+        window.dispatchEvent(event)
+    }
+
     return (
         <div className="min-h-screen bg-background">
-
             <div className="relative" style={{ height: 'calc(100vh - 4rem)' }}>
                 <div ref={containerRef} className="h-full w-full" />
 
@@ -466,7 +839,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                 <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
                             </div>
                             <h3 className="font-serif text-2xl font-bold text-primary mb-3">Musée des Civilisations Noires</h3>
-                            <p className="text-sm text-muted-foreground">Chargement...</p>
+                            <p className="text-sm text-muted-foreground">Chargement de la galerie 3D...</p>
                         </div>
                     </div>
                 )}
@@ -487,7 +860,7 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                 <Move className="h-4 w-4 text-primary sm:h-5 sm:w-5 shrink-0" />
                                 <div className="min-w-0">
                                     <p className="text-xs font-medium text-white sm:text-sm">Déplacer</p>
-                                    <p className="text-[10px] text-muted-foreground sm:text-xs truncate">WASD / Flèches</p>
+                                    <p className="text-[10px] text-muted-foreground sm:text-xs truncate">ZQSD / WASD / Flèches</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 sm:gap-3">
@@ -502,6 +875,13 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                 <div className="min-w-0">
                                     <p className="text-xs font-medium text-white sm:text-sm">Zoom</p>
                                     <p className="text-[10px] text-muted-foreground sm:text-xs truncate">Molette / Pincer</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 sm:gap-3">
+                                <ArrowUp className="h-4 w-4 text-primary sm:h-5 sm:w-5 shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-xs font-medium text-white sm:text-sm">Étages</p>
+                                    <p className="text-[10px] text-muted-foreground sm:text-xs truncate">Boutons ou PageUp/PageDown</p>
                                 </div>
                             </div>
                         </div>
@@ -519,6 +899,31 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                     <Card className="px-3 py-2 bg-white backdrop-blur-xl border-primary/30 sm:px-5 sm:py-3">
                         <p className="text-xs font-bold text-primary sm:text-sm">{initialArtworks.length} œuvres</p>
                     </Card>
+
+                    {/* Sélecteur d'étage */}
+                    <Card className="p-2 bg-black/90 backdrop-blur-xl border-primary/30">
+                        <div className="flex flex-col gap-1">
+                            <Button
+                                variant={currentFloor === 2 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => changeFloor(2)}
+                                className={`w-full gap-2 ${currentFloor === 2 ? 'bg-primary text-black' : 'bg-transparent border-primary/30 text-primary hover:bg-primary/10'}`}
+                            >
+                                <ArrowUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                                Étage 1
+                            </Button>
+                            <Button
+                                variant={currentFloor === 1 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => changeFloor(1)}
+                                className={`w-full gap-2 ${currentFloor === 1 ? 'bg-primary text-black' : 'bg-transparent border-primary/30 text-primary hover:bg-primary/10'}`}
+                            >
+                                <ArrowDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                                RDC
+                            </Button>
+                        </div>
+                    </Card>
+
                     <Button variant="outline" size="sm" onClick={toggleFullscreen} className="bg-black/90 border-primary/30 text-primary hover:bg-black/80 text-xs sm:text-sm h-8 sm:h-9 px-3">
                         {isFullscreen ? <Minimize2 className="h-3 w-3 mr-1.5 sm:h-4 sm:w-4 sm:mr-2" /> : <Maximize2 className="h-3 w-3 mr-1.5 sm:h-4 sm:w-4 sm:mr-2" />}
                         <span className="hidden sm:inline">{isFullscreen ? 'Quitter' : 'Plein écran'}</span>
@@ -541,7 +946,12 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                     <X className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                                 <div className="absolute bottom-2 left-3 right-3 sm:bottom-3 sm:left-4 sm:right-4">
-                                    <Badge className="mb-1.5 bg-primary text-black font-semibold text-[10px] sm:text-xs sm:mb-2">{selectedArtwork.category?.name_fr}</Badge>
+                                    <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                                        <Badge className="bg-primary text-black font-semibold text-[10px] sm:text-xs">{selectedArtwork.category?.name_fr}</Badge>
+                                        <Badge className="bg-secondary/80 text-secondary-foreground font-semibold text-[10px] sm:text-xs">
+                                            {currentFloor === 1 ? 'RDC' : 'Étage 1'}
+                                        </Badge>
+                                    </div>
                                     <h2 className="font-serif text-lg font-bold text-primary mb-0.5 sm:text-2xl sm:mb-1">{selectedArtwork.title}</h2>
                                     <p className="text-sm text-white/90 sm:text-base">{selectedArtwork.artist}</p>
                                 </div>
@@ -587,7 +997,12 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                                             <Volume2 className="h-3 w-3 text-primary sm:h-4 sm:w-4" />
                                             <span className="text-[10px] font-semibold text-primary sm:text-xs">GUIDE AUDIO</span>
                                         </div>
-                                        <AudioPlayer audioUrl={audioUrl} title={`${selectedArtwork.title} - Description`} />
+                                        <div className="rounded-lg border border-primary/30 bg-black/50 p-3">
+                                            <audio controls className="w-full" style={{ height: '40px' }}>
+                                                <source src={audioUrl} type="audio/mpeg" />
+                                                Votre navigateur ne supporte pas l'audio.
+                                            </audio>
+                                        </div>
                                     </div>
                                 )}
 
@@ -604,8 +1019,6 @@ export function Gallery3DRoom({ initialArtworks }: Gallery3DRoomProps) {
                     </div>
                 )}
             </div>
-
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" />
         </div>
     )
 }
