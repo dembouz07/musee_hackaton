@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Menu, X, QrCode, ImageIcon, Shield, Maximize2 } from "lucide-react"
+import { Menu, X, QrCode, Image, Shield, Maximize2 } from "lucide-react"
 import { useState } from "react"
 
 export function Navigation() {
@@ -12,88 +12,98 @@ export function Navigation() {
 
   const navItems = [
     { href: "/", label: "Accueil", icon: null },
-    { href: "/galerie", label: "Galerie", icon: ImageIcon },
+    { href: "/galerie", label: "Galerie", icon: Image },
     { href: "/galerie/3d", label: "Visite 3D", icon: Maximize2 },
     { href: "/scanner", label: "Scanner QR", icon: QrCode },
   ]
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <span className="font-serif text-xl font-bold text-primary-foreground">M</span>
-            </div>
-            <div className="hidden md:block">
-              <h1 className="font-serif text-lg font-bold leading-tight text-foreground">
-                Musée des Civilisations Noires
-              </h1>
-            </div>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden items-center gap-6 md:flex">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
-                    pathname === item.href ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {Icon && <Icon className="h-4 w-4" />}
-                  {item.label}
-                </Link>
-              )
-            })}
-            <Link href="/admin">
-              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                <Shield className="h-4 w-4" />
-                Admin
-              </Button>
+      <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 items-center justify-between">
+            {/* Logo MCN */}
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center">
+                <img
+                    src="https://image.noelshack.com/fichiers/2025/41/1/1759771879-chatgpt-image-6-oct-2025-17-25-28.jpg"
+                    alt="Logo MCN"
+                    className="h-full w-full object-contain"
+                    onError={(e) => {
+                      // Fallback si l'image ne charge pas
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = '<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary"><span class="font-serif text-xl font-bold text-primary-foreground">MCN</span></div>';
+                    }}
+                />
+              </div>
+              <div className="hidden md:block">
+                <h1 className="font-serif text-lg font-bold leading-tight text-foreground">
+                  Musée des Civilisations Noires
+                </h1>
+                <p className="text-xs text-muted-foreground">Dakar - Sénégal</p>
+              </div>
             </Link>
-          </div>
 
-          {/* Mobile Menu Button */}
-          <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
-            {mobileMenuOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="border-t border-border/40 py-4 md:hidden">
-            <div className="flex flex-col gap-4">
+            {/* Desktop Navigation */}
+            <div className="hidden items-center gap-6 md:flex">
               {navItems.map((item) => {
                 const Icon = item.icon
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
-                      pathname === item.href ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {Icon && <Icon className="h-4 w-4" />}
-                    {item.label}
-                  </Link>
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
+                            pathname === item.href ? "text-primary" : "text-muted-foreground"
+                        }`}
+                    >
+                      {Icon && <Icon className="h-4 w-4" />}
+                      {item.label}
+                    </Link>
                 )
               })}
-              <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" size="sm" className="w-full gap-2 bg-transparent">
+              <Link href="/admin">
+                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
                   <Shield className="h-4 w-4" />
                   Admin
                 </Button>
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+              {mobileMenuOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
+            </button>
           </div>
-        )}
-      </div>
-    </nav>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+              <div className="border-t border-border/40 py-4 md:hidden">
+                <div className="flex flex-col gap-4">
+                  {navItems.map((item) => {
+                    const Icon = item.icon
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
+                                pathname === item.href ? "text-primary" : "text-muted-foreground"
+                            }`}
+                        >
+                          {Icon && <Icon className="h-4 w-4" />}
+                          {item.label}
+                        </Link>
+                    )
+                  })}
+                  <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full gap-2 bg-transparent">
+                      <Shield className="h-4 w-4" />
+                      Admin
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+          )}
+        </div>
+      </nav>
   )
 }
