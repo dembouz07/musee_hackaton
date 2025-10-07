@@ -2,6 +2,7 @@ import {OeuvreClient} from "@/components/oeuvre-client";
 import {notFound} from "next/navigation";
 import {createClient} from "@/lib/supabase/client";
 import {AdminNav} from "@/components/admin-nav";
+import {Navigation} from "@/components/navigation";
 
 export default async function OeuvrePage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -46,7 +47,7 @@ export default async function OeuvrePage({ params }: { params: { id: string } })
 
   return (
       <div className="min-h-screen">
-        <AdminNav/>
+        <Navigation/>
         <OeuvreClient artwork={artwork} relatedArtworks={relatedArtworks || []} />
       </div>
   )
