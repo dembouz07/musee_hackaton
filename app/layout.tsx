@@ -27,9 +27,7 @@ export default function RootLayout({
       <head>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"/>
           <script dangerouslySetInnerHTML={{__html: 'eruda.init();'}}/>
-          <script async
-                  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7432114644358102"
-                  crossOrigin="anonymous"></script>
+          <meta name="google-adsense-account" content="ca-pub-7432114644358102"/>
       </head>
       <body className={`font-sans ${GeistSans.variable} ${playfair.variable}`}>
       <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
